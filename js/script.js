@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // const modalTimerId = setTimeout(openModal, 3000);  //Модальное окно, которое появляется каждые 3 секунды 
+    const modalTimerId = setTimeout(openModal, 3000); //Модальное окно, которое появляется каждые 3 секунды 
 
     function showModalByScroll() {
         if (window.pageYOffset + document.documentElement.clientHeight >= document.documentElement.scrollHeight - 1) {
@@ -253,8 +253,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const request = new XMLHttpRequest(); // Моздание HTTP объекта, которые далее должен передать запрос на сервер
             request.open('POST', 'server.php'); // Метод делающий пост запрос серверу 
 
-            request.setRequestHeader('Content-type', '');
-            const formData = new FormData(form); // Создание пар ключ значение, аргументы для этого получаются с формы
+            // request.setRequestHeader('Content-type', 'application/json');
+
+
+            // Для создания объекта и для дальнейшей конвертации его в JSON
+            const formData = new FormData(form);
+            const object = {};
+            formData.forEach(function(value, key) {
+                object[key] = value;
+            });
+
+
+            // Конвертация объекта в JSON
+            //! PHP не умеет работать с JSON поэтому надо будет конвертировать в подходящий формат, в дальнейшем
+            // const json = JSON.stringify(object);
+            // request.send(json);
+
+
+            // const formData = new FormData(form); // Создание пар ключ значение, аргументы для этого получаются с формы
+
+            // Из-за спцифичночти FormData данные надо будет первести в 
 
             request.send(formData);
 
