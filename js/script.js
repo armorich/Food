@@ -258,9 +258,11 @@ document.addEventListener('DOMContentLoaded', () => {
             form.insertAdjacentElement('afterend', statusMessage);
 
 
-            const request = new XMLHttpRequest(); // Моздание HTTP объекта, которые далее должен передать запрос на сервер
-            request.open('POST', 'server.php'); // Метод делающий пост запрос серверу 
-            request.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+            // const request = new XMLHttpRequest(); // Моздание HTTP объекта, которые далее должен передать запрос на сервер
+            // request.open('POST', 'server.php'); // Метод делающий пост запрос серверу 
+
+
+            // request.setRequestHeader('Content-type', 'application/json; charset=utf-8');
 
 
             // Для создания объекта и для дальнейшей конвертации его в JSON
@@ -273,8 +275,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Конвертация объекта в JSON
             //! PHP не умеет работать с JSON поэтому надо будет конвертировать в подходящий формат, в дальнейшем
-            const json = JSON.stringify(object); // Превращение из обычного объекта в JSON
-            request.send(json);
+            // const json = JSON.stringify(object); // Превращение из обычного объекта в JSON
+            // request.send(json);
+
+
+            fetch('server.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify(object)
+                }).then(data => data.text())
+                .then(data => {
+                    console.log(data); // Отображает в консоли переданные данные
+                    showThanksModal(message.success); // Вызывается модальное окно с сообщением о благодарности 
+                    form.reset(); // так производится очистка формы
+                    statusMessage.remove(); // Удаление сообщения о статусе
+                }).catch(() => { // В случае ошибки будет выполняться блок catch
+                    showThanksModal(message.failure); // Вызывается модальное окно с сообщением об ошибке
+                }).finally(() => {
+                    form.reset();
+                });
 
 
             // const formData = new FormData(form); // Создание пар ключ значение, аргументы для этого получаются с формы
@@ -283,16 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // request.send(formData);
 
-            request.addEventListener('load', () => {
-                if (request.status === 200) {
-                    console.log(request.response); // Отображает в консоли переданные данные
-                    showThanksModal(message.success); // Вызывается модальное окно с сообщением о благодарности 
-                    statusMessage.remove(); // Удаление сообщения о статусе
-                    form.reset(); // так производится очистка формы
-                } else {
-                    showThanksModal(message.failure); // Вызывается модальное окно с сообщением об ошибке
-                }
-            });
+            // request.addEventListener('load', () => {
+            //     if (request.status === 200) {
+            //         console.log(request.response); // Отображает в консоли переданные данные
+            //         showThanksModal(message.success); // Вызывается модальное окно с сообщением о благодарности 
+            //         statusMessage.remove(); // Удаление сообщения о статусе
+            //         form.reset(); // так производится очистка формы
+            //     } else {
+            //         showThanksModal(message.failure); // Вызывается модальное окно с сообщением об ошибке
+            //     }
+            // });
         });
     }
 
@@ -324,4 +345,16 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal(); // Ф-я закрытия модального окна 
         }, 4000);
     }
+
+    // Пример с GET запросом
+    //     fetch('https://jsonplaceholder.typicode.com/posts', {
+    //             method: "POST",
+    //             body: JSON.stringify({ name: 'Alex' }),
+    //             headers: {
+    //                 'Content-type': 'application/json'
+    //             }
+    //         }) // От сюда мы получим промис
+    //         .then(response => response.json())
+    //         .then(json => console.log(json));
+
 });
