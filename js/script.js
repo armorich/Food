@@ -1,3 +1,5 @@
+// const { json } = require("body-parser");
+
 document.addEventListener('DOMContentLoaded', () => {
     //! Tabs
     const tabs = document.querySelectorAll('.tabheader__item'),
@@ -138,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    const modalTimerId = setTimeout(openModal, 50000); //Модальное окно, которое появляется каждые 3 секунды 
+    const modalTimerId = setTimeout(openModal, 5000); //Модальное окно, которое появляется каждые 3 секунды 
 
     function showModalByScroll() {
         if (window.pageYOffset + document.documentElement.clientHeight >= document.documentElement.scrollHeight - 1) {
@@ -191,42 +193,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const getResource = async (url) => {
+        const res = await fetch(url); 
+
+        if (!res.ok) {
+            throw new Error(`Could not fetch ${url} status: ${res.status}`);
+        }
+
+        return await res.json();
+    };
+
+
     //? Так можно генерировать карточки с текстом, что достаточно удобно, потому что надо вносить только информацию, а длее они автоматически генерируются и создаются на странице
-    new MenuCard(
-        "img/tabs/vegy.jpg",
-        "vegy",
-        'Меню "Фитнес"',
-        '"Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        9,
-        '.menu .container'
-    ).render();
 
-    new MenuCard(
-        "img/tabs/elite.jpg",
-        "elite",
-        'Меню “Премиум”',
-        'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
-        14,
-        ".menu .container",
+    getResource('http://localhost:3000/menu')
+        .then(data => {
+           data.forEach(({img, altimg, title, descr, price}) => {
+                new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+            }); 
+        });
 
-    ).render();
-
-    new MenuCard(
-        "img/tabs/post.jpg",
-        "post",
-        'Меню "Постное"',
-        'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.',
-        9,
-        '.menu .container'
-    ).render();
+  
 
 
-
-
-    //? Forms (AJAX запросы с использованием локального сервера MAMP)
-
-
-
+    //? Forms (AJAX запросы с использованием локального сервера MAMP) 
 
     // Переменная которая по тегу <form> получает элементы
     const forms = document.querySelectorAll('form');
@@ -239,11 +229,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     forms.forEach(item => { // Перебор всех тегов <form>
-        postData(item); // Исппользование ф-ии для одной из пребранных форм
+        bindPostData(item); // Исппользование ф-ии для одной из пребранных форм
     });
 
+    const postData = async (url, data) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: data
+        }); 
+        return await res.json();
+    };
+
     // 
-    function postData(form) {
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => { // Событие которое инициализирует отправку формы, работает только на <form> или <input type="submit">
             e.preventDefault(); //Сбро стандартного поведения браузера
 
@@ -267,10 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Для создания объекта и для дальнейшей конвертации его в JSON
             const formData = new FormData(form);
-            const object = {};
-            formData.forEach(function(value, key) {
-                object[key] = value;
-            });
+            const json = JSON.stringify(Object.fromEntries(formData.entries())); 
 
 
             // Конвертация объекта в JSON
@@ -279,23 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // request.send(json);
 
 
-            fetch('server.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-type': 'application/json'
-                    },
-                    body: JSON.stringify(object)
-                }).then(data => data.text())
-                .then(data => {
-                    console.log(data); // Отображает в консоли переданные данные
-                    showThanksModal(message.success); // Вызывается модальное окно с сообщением о благодарности 
-                    form.reset(); // так производится очистка формы
-                    statusMessage.remove(); // Удаление сообщения о статусе
-                }).catch(() => { // В случае ошибки будет выполняться блок catch
-                    showThanksModal(message.failure); // Вызывается модальное окно с сообщением об ошибке
-                }).finally(() => {
-                    form.reset();
-                });
+           
+            postData('http://localhost:3000/requests', json)
+            .then(data => {
+                console.log(data); // Отображает в консоли переданные данные
+                showThanksModal(message.success); // Вызывается модальное окно с сообщением о благодарности 
+                form.reset(); // так производится очистка формы
+                statusMessage.remove(); // Удаление сообщения о статусе
+            }).catch(() => { // В случае ошибки будет выполняться блок catch
+                showThanksModal(message.failure); // Вызывается модальное окно с сообщением об ошибке
+            }).finally(() => {
+                form.reset();
+            });
 
 
             // const formData = new FormData(form); // Создание пар ключ значение, аргументы для этого получаются с формы
@@ -357,4 +350,226 @@ document.addEventListener('DOMContentLoaded', () => {
     //         .then(response => response.json())
     //         .then(json => console.log(json));
 
+
+    fetch('http://localhost:3000/menu')
+        .then(data => data.json())
+        .then(res => console.log(res)); 
+
+
+    // Slider
+
+    const slides = document.querySelectorAll('.offer__slide'), 
+          slider = document.querySelector('.offer__slider'), 
+          prev = document.querySelector('.offer__slider-prev'), 
+          next = document.querySelector('.offer__slider-next'), 
+          total = document.querySelector('#total'), 
+          current = document.querySelector('#current'),
+          slidesWrapper = document.querySelector('.offer__slider-wrapper'), 
+          slidesField = document.querySelector('.offer__slider-inner'), 
+          width = window.getComputedStyle(slidesWrapper).width; 
+    console.log(slides.length);
+    let slideIndex = 1; 
+    let offset = 0;
+
+    if (slides.length < 10) {
+        total.textContent = `0${slides.length}`;
+        current.textContent = `0${slideIndex}`;
+    }else{
+        total.textContent = slides.length();
+        current.textContent = slideIndex;
+    }
+    
+    next.addEventListener('click', () => {
+        if (offset == +width.slice(0, width.length-2) * (slides.length - 1)){
+            offset = 0;
+        }else{
+            offset += +width.slice(0, width.length-2)
+        }
+
+        slidesField.style.transform = `translateX(-${offset}px)`;
+
+        if (slideIndex == slides.length) {
+            slideIndex = 1;
+        }else{ 
+            slideIndex++; 
+        }
+
+        if (slides.length < 10){
+            current.textContent = `0${slideIndex}`;
+        }else{ 
+            current.textContent = slideIndex; 
+        }
+
+
+        dots.forEach(dot => dot.style.opacity = '.5');
+        dots[slideIndex - 1].style.opacity = 1;
+
+    });
+
+    prev.addEventListener('click', () => {
+        if (offset == 0){
+            offset = +width.slice(0, width.length-2) * (slides.length - 1);
+        }else{
+            offset -= +width.slice(0, width.length-2)
+        }
+
+        slidesField.style.transform = `translateX(-${offset}px)`;
+
+        if (slideIndex == 1) {
+            slideIndex = slides.length;
+        }else{ 
+            slideIndex--; 
+        }
+
+        if (slides.length < 10){
+            current.textContent = `0${slideIndex}`;
+        }else{ 
+            current.textContent = slideIndex; 
+        }
+
+
+        // Перебираем массив с точками, а потом добавляется значение прозрачности 0.5
+        dots.forEach(dot => dot.style.opacity = '.5');
+
+        // Далее добавляем перебирваемому на данный момент элементу прозрачность 1
+        dots[slideIndex - 1].style.opacity = 1;
+    });
+
+
+   
+
+    //? Улучшенный вариант слайдера, внизу будет такой себе (он больше был ориантрирован на сам функцианал)
+
+    slidesField.style.width = 100 * slides.length + '%';
+    slidesField.style.display = 'flex'; 
+    slidesField.style.transition = '0.5s all';
+    slides.forEach(slide => {
+        slide.style.width = width; 
+    }); 
+
+    slider.style.position = 'relative';
+
+    const indicators = document.createElement('ol'), 
+          dots = []; 
+    indicators.classList.add('crousel-indicators');
+    indicators.style.cssText = `
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 15;
+        display: flex;
+        justify-content: center;
+        margin-right: 15%;
+        margin-left: 15%;
+        list-style: none;
+    `;
+    slider.append(indicators);
+
+    //* Цикл для создания точек, чтобы создалось кол-во точек в зависимости от количества слайдов
+    for (let i = 0; i < slides.length; i++){
+        const dot = document.createElement('li'); 
+
+        //* Каждой точке будет устанавливаться атрибут data-slide-to и выстравивать нумерацию начиная с единицы
+        dot.setAttribute('data-slide-to', i + 1);
+        dot.style.cssText = `
+            box-sizing: content-box;
+            flex: 0 1 auto;
+            width: 30px;
+            height: 6px;
+            margin-right: 3px;
+            margin-left: 3px;
+            cursor: pointer;
+            background-color: #fff;
+            background-clip: padding-box;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            opacity: .5;
+            transition: opacity .6s ease;
+        `; 
+
+        if (i == 0){
+            dot.style.opacity = 1; 
+        }
+        indicators.append(dot); 
+
+        // Метод для отправки точек в массив
+        dots.push(dot);
+
+    }
+
+     //? Перебор всех точек, далее навешивание на каждый обработчика событий, 
+    //? далее получаем атрибут, который добавляется,
+    dots.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+            const slideTo = e.target.getAttribute('data-slide-to'); 
+
+            slideIndex = slideTo; 
+            offset = +width.slice(0, width.length - 2) * (slideTo - 1); 
+            slidesField.style.transform = `translateX(-${offset}px)`;
+
+            if (slides.length < 10){
+                current.textContent = `0${slideIndex}`;
+            }else{ 
+                current.textContent = slideIndex; 
+            }
+
+            dots.forEach(dot => dot.style.opacity = '.5');
+            dots[slideIndex - 1].style.opacity = 1; 
+            
+        });
+    }); 
+    
+    slidesWrapper.style.overflow = 'hidden'; 
+
+
+    //! Самый простой вариант слайдера, сама логика отображения слайдов
+    /* showSlides(slideIndex); 
+
+    //* Отображение общего количества слайдов
+    // Будет каждый раз при вызове ф-ии запускаться этот скрипт 
+    // Если слайдов будет меньше 10, тогда будет строка с 0, в другом случае будет строка с количесвом, но без 0
+    if (slides.length < 10) {
+        total.textContent = `0${slides.length}`;
+    }else{
+        total.textContent = slides.length();
+    }
+
+    function showSlides(n) {
+        if (n > slides.length){
+            slideIndex = 1; 
+        }
+
+        if (n < 1) {
+            slideIndex = 4; 
+        }
+
+        //* Скрытие скрытие слайдов
+        slides.forEach(item => item.style.display = 'none'); 
+
+
+        //* Отображение первого слайда
+        slides[slideIndex - 1].style.display = 'block'; 
+
+        //* Отображение номера текущего слайда
+        if (slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        }else{
+            current.textContent = slideIndex;
+        }
+    }
+
+    //* Изменение на 1 цифры у слайдера
+    function plusSlides(n) {
+        showSlides(slideIndex += n)
+    }
+
+    prev.addEventListener('click', () => {
+        plusSlides(-1)
+    });
+
+    next.addEventListener('click', () => {
+        plusSlides(1)
+    }) */
 });
+
